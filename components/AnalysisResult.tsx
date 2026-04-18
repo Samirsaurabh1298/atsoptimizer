@@ -1,0 +1,173 @@
+'use client'
+import { AnalysisData } from '@/app/page'
+
+function ScoreRing({ score }: { score: number }) {
+  const size = 140
+  const r = 54
+  const circ = 2 * Math.PI * r
+  const offset = circ - (score / 100) * circ
+  const color = score >= 70 ? '#1a472a' : score >= 50 ? '#d97706' : '#c0392b'
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--border)" strokeWidth={10} />
+        <circle
+          cx={size/2} cy={size/2} r={r} fill="none"
+          stroke={color} strokeWidth={10} strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={circ}
+          style={{
+            animation: `dash 1.2s ease-out 0.3s forwards`,
+            '--target-offset': offset
+          } as any}
+        />
+      </svg>
+      <style>{`
+        @keyframes dash {
+          to { stroke-dashoffset: ${offset}; }
+        }
+      `}</style>
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex',
+        flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <span style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-display)', color }}>
+          {score}%
+        </span>
+        <span style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 2 }}>match</span>
+      </div>
+    </div>
+  )
+}
+
+function TagList({ items, type }: { items: string[], type: 'missing' | 'match' | 'warn' }) {
+  if (!items.length) return <p style={{ fontSize: 13, color: 'var(--ink-muted)' }}>None found</p>
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {items.map(item => (
+        <span key={item} className={`tag-${type}`}>{item}</span>
+      ))}
+    </div>
+  )
+}
+
+export default function AnalysisResult({
+  analysis, onOptimize, onReset, isOptimizing
+}: {
+  analysis: AnalysisData
+  onOptimize: () => void
+  onReset: () => void
+  isOptimizing: boolean
+}) {
+  const { matchScore, matchedSkills, missingSkills, experienceGaps, strengths, recommendations, summary } = analysis
+
+  const scoreLabel = matchScore >= 70 ? '🟢 Strong match' : matchScore >= 50 ? '🟡 Moderate match' : '🔴 Needs work'
+
+  return (
+    <div className="fade-up">
+      <div style={{ marginBottom: 28 }}>
+        <h2 className="font-display" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>
+          Analysis complete
+        </h2>
+        <p style={{ color: 'var(--ink-muted)', fontSize: 15, marginTop: 4 }}>
+          Here's how your resume matches this job description
+        </p>
+      </div>
+
+      {/* Score + summary */}
+      <div className="card" style={{ marginBottom: 16, display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <ScoreRing score={matchScore} />
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <p style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 4 }}>Overall ATS Match Score</p>
+          <p className="font-display" style={{ fontSize: 19, fontWeight: 700, marginBottom: 10 }}>
+            {scoreLabel}
+          </p>
+          <p style={{ fontSize: 14, color: 'var(--ink-muted)', lineHeight: 1.7 }}>{summary}</p>
+        </div>
+      </div>
+
+      {/* Grid: missing + matched */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div className="card">
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--danger)', fontSize: 16 }}>✕</span> Missing Skills
+            <span style={{
+              marginLeft: 'auto', fontSize: 12, background: 'var(--danger-light)',
+              color: 'var(--danger)', borderRadius: 12, padding: '1px 8px'
+            }}>{missingSkills.length}</span>
+          </p>
+          <TagList items={missingSkills} type="missing" />
+        </div>
+        <div className="card">
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--accent)', fontSize: 16 }}>✓</span> Matched Skills
+            <span style={{
+              marginLeft: 'auto', fontSize: 12, background: 'var(--accent-light)',
+              color: 'var(--accent)', borderRadius: 12, padding: '1px 8px'
+            }}>{matchedSkills.length}</span>
+          </p>
+          <TagList items={matchedSkills} type="match" />
+        </div>
+      </div>
+
+      {/* Strengths */}
+      {strengths.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 12 }}>⭐ Your Strengths</p>
+          <TagList items={strengths} type="match" />
+        </div>
+      )}
+
+      {/* Experience gaps */}
+      {experienceGaps.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 12 }}>
+            <span style={{ color: 'var(--warn)' }}>△</span> Experience Gaps
+          </p>
+          <ul style={{ paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {experienceGaps.map(g => (
+              <li key={g} style={{ fontSize: 13, color: 'var(--ink-muted)', lineHeight: 1.6 }}>{g}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="card" style={{ marginBottom: 24, background: 'var(--accent-light)', borderColor: '#b7dfc9' }}>
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 12, color: 'var(--accent)' }}>
+            💡 Recommendations
+          </p>
+          <ol style={{ paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {recommendations.map((r, i) => (
+              <li key={i} style={{ fontSize: 13, color: 'var(--accent-mid)', lineHeight: 1.6 }}>{r}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* CTA */}
+      <button
+        onClick={onOptimize}
+        disabled={isOptimizing}
+        style={{
+          width: '100%', padding: '16px',
+          background: isOptimizing ? 'var(--border)' : 'var(--accent)',
+          color: isOptimizing ? 'var(--ink-muted)' : '#fff',
+          border: 'none', borderRadius: 12, fontSize: 16,
+          fontWeight: 700, cursor: isOptimizing ? 'wait' : 'pointer',
+          fontFamily: 'var(--font-display)', letterSpacing: '-0.2px',
+          transition: 'all 0.2s ease', marginBottom: 10
+        }}
+      >
+        {isOptimizing ? (
+          <>
+            ⏳ Generating optimized resume
+            <span className="dot">.</span><span className="dot">.</span><span className="dot">.</span>
+          </>
+        ) : '✦ Generate Optimized Resume →'}
+      </button>
+    </div>
+  )
+}
