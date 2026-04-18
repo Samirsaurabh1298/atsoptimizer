@@ -11,12 +11,10 @@ export async function POST(req: NextRequest) {
     const missingSkills = analysis?.missingSkills?.join(', ') || ''
     const recommendations = analysis?.recommendations?.join('\n- ') || ''
 
-    const prompt = `You are an expert ATS resume optimizer and professional resume writer. Your job is to rewrite the following resume to:
-1. Naturally incorporate these missing keywords from the job description: ${missingSkills}
-2. Use ATS-friendly formatting (no tables, no columns, standard section headings)
-3. Keep all original experience and facts — do NOT fabricate anything
-4. Use strong action verbs and quantify achievements where possible
-5. Follow these specific recommendations: 
+    const prompt = `You are an expert ATS resume optimizer and professional resume writer. Rewrite the resume so it scores 95%+ against the job description.
+
+MISSING SKILLS TO INCORPORATE: ${missingSkills}
+RECOMMENDATIONS:
 - ${recommendations}
 
 ORIGINAL RESUME:
@@ -25,21 +23,24 @@ ${cvText.slice(0, 4000)}
 TARGET JOB DESCRIPTION:
 ${jdText.slice(0, 2000)}
 
-Write the complete optimized resume in plain text format. Use these standard section headers:
+CRITICAL RULES:
+1. Missing skills must appear INSIDE experience and project bullet points — NOT just listed in Skills section
+   - Example: if "Agile" is missing, add it to a relevant job bullet: "Led Agile sprint planning for a team of 8..."
+   - Example: if "Power BI" is missing, add it to a project: "Built Power BI dashboards to visualize sales data..."
+2. Every missing skill must be woven naturally into at least one real experience or project description
+3. Keep all original facts — enhance language, never fabricate new roles or companies
+4. Use strong action verbs: Led, Architected, Delivered, Optimized, Automated, Streamlined
+5. Quantify achievements wherever possible (%, $, team size, time saved)
+6. ATS-friendly plain text only — no tables, no columns, dashes (-) for bullets
+
+SECTION HEADERS (use exactly):
 CONTACT INFORMATION
 PROFESSIONAL SUMMARY
 SKILLS
 EXPERIENCE
+PROJECTS (if any)
 EDUCATION
 CERTIFICATIONS (if applicable)
-
-Rules:
-- Plain text only, no markdown, no bullet symbols other than simple dashes (-)  
-- Keep the candidate's real information — enhance and expand, never fabricate
-- Write a compelling professional summary that incorporates key JD keywords
-- In the Skills section, naturally include the missing skills IF they are plausible based on the candidate's background
-- Enhance bullet points with stronger language and JD keywords where authentic
-- Standard fonts will be applied by the user (Arial/Calibri 11pt)
 
 Output ONLY the resume text, starting with the candidate's name.`
 

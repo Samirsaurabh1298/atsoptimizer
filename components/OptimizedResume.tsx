@@ -17,37 +17,71 @@ export default function OptimizedResume({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleDownloadTxt = () => {
-    const blob = new Blob([resume], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'optimized-resume.txt'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleDownloadHtml = () => {
-    const html = `<!DOCTYPE html>
-<html lang="en">
+  const handleDownloadPdf = () => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Optimized Resume</title>
 <style>
-  body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; max-width: 800px; margin: 40px auto; color: #111; }
-  h1 { font-size: 18pt; margin-bottom: 4px; }
-  h2 { font-size: 12pt; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-  p, li { font-size: 11pt; }
-  pre { white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #111; padding: 40px; }
+  pre { white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.7; }
+  @media print { body { padding: 20px; } button { display: none; } }
 </style>
 </head>
-<body><pre>${resume.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></body>
-</html>`
-    const blob = new Blob([html], { type: 'text/html' })
+<body>
+<button onclick="window.print()" style="margin-bottom:20px;padding:8px 20px;background:#1a472a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
+  Save as PDF (use Print → Save as PDF)
+</button>
+<pre>${resume.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+</body>
+</html>`)
+    printWindow.document.close()
+  }
+
+  const handleDownloadWord = async () => {
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx')
+    const lines = resume.split('\n')
+    const docChildren: any[] = []
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) {
+        docChildren.push(new Paragraph({ text: '' }))
+        continue
+      }
+      const isHeading = /^[A-Z][A-Z\s]{3,}$/.test(trimmed)
+      if (isHeading) {
+        docChildren.push(new Paragraph({
+          text: trimmed,
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 80 },
+        }))
+      } else if (trimmed.startsWith('- ')) {
+        docChildren.push(new Paragraph({
+          children: [new TextRun({ text: trimmed.slice(2), size: 22 })],
+          bullet: { level: 0 },
+        }))
+      } else {
+        docChildren.push(new Paragraph({
+          children: [new TextRun({ text: trimmed, size: 22 })],
+          spacing: { after: 40 },
+        }))
+      }
+    }
+
+    const doc = new Document({
+      sections: [{ properties: {}, children: docChildren }],
+    })
+
+    const blob = await Packer.toBlob(doc)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'optimized-resume.html'
+    a.download = 'optimized-resume.docx'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -105,7 +139,7 @@ export default function OptimizedResume({
           {copied ? '✓ Copied!' : '📋 Copy text'}
         </button>
         <button
-          onClick={handleDownloadTxt}
+          onClick={handleDownloadPdf}
           style={{
             flex: 1, minWidth: 120, padding: '11px 16px',
             background: 'var(--surface)', color: 'var(--ink)',
@@ -113,18 +147,18 @@ export default function OptimizedResume({
             fontSize: 13, fontWeight: 500, cursor: 'pointer'
           }}
         >
-          ⬇ Download .txt
+          📄 Download PDF
         </button>
         <button
-          onClick={handleDownloadHtml}
+          onClick={handleDownloadWord}
           style={{
             flex: 1, minWidth: 120, padding: '11px 16px',
-            background: 'var(--surface)', color: 'var(--ink)',
-            border: '1px solid var(--border)', borderRadius: 10,
+            background: 'var(--accent)', color: '#fff',
+            border: 'none', borderRadius: 10,
             fontSize: 13, fontWeight: 500, cursor: 'pointer'
           }}
         >
-          🌐 Download .html
+          📝 Download Word
         </button>
       </div>
 
@@ -134,7 +168,7 @@ export default function OptimizedResume({
         borderRadius: 10, padding: '12px 16px', marginBottom: 16,
         fontSize: 13, color: 'var(--warn)', lineHeight: 1.6
       }}>
-        <strong>ATS tip:</strong> Copy this text into a fresh Word document (.docx) using Arial or Calibri 11pt for best ATS compatibility. Avoid tables, columns, and images.
+        <strong>ATS tip:</strong> Use the Word (.docx) download for best ATS compatibility — Arial or Calibri 11pt, no tables or columns.
       </div>
 
       {/* Resume output */}
