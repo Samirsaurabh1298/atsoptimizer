@@ -5,6 +5,23 @@ import AnalysisResult from '@/components/AnalysisResult'
 import OptimizedResume from '@/components/OptimizedResume'
 import Header from '@/components/Header'
 
+export type AtsKeywords = {
+  hardSkills: string[]
+  softSkills: string[]
+  certifications: string[]
+  industryTerms: string[]
+}
+
+export type SeniorityLevel = 'junior' | 'mid' | 'senior' | 'executive'
+
+export type ScoreBreakdown = {
+  keywordMatch: number
+  skillsMatch: number
+  experienceRelevance: number
+  formatting: number
+  actionVerbs: number
+}
+
 export type AnalysisData = {
   matchScore: number
   matchedSkills: string[]
@@ -13,6 +30,11 @@ export type AnalysisData = {
   strengths: string[]
   recommendations: string[]
   summary: string
+  atsKeywords: AtsKeywords
+  experienceYears: number
+  seniorityLevel: SeniorityLevel
+  suggestedPages: 1 | 2
+  scoreBreakdown: ScoreBreakdown
 }
 
 export type Stage = 'upload' | 'analyzing' | 'results' | 'optimizing' | 'optimized'
@@ -24,6 +46,8 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null)
   const [optimizedResume, setOptimizedResume] = useState('')
   const [error, setError] = useState('')
+  const [pageBudget, setPageBudget] = useState<1 | 2>(1)
+  const [originalScore, setOriginalScore] = useState<number | null>(null)
 
   const handleAnalyze = async (cv: string, jd: string) => {
     setCvText(cv)
@@ -40,6 +64,8 @@ export default function Home() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Analysis failed')
       setAnalysis(data)
+      setOriginalScore(data.matchScore)
+      setPageBudget(data.suggestedPages ?? 1)
       setStage('results')
     } catch (e: any) {
       setError(e.message)
@@ -54,7 +80,7 @@ export default function Home() {
       const res = await fetch('/api/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvText, jdText, analysis }),
+        body: JSON.stringify({ cvText, jdText, analysis, pageBudget }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Optimization failed')
@@ -104,6 +130,8 @@ export default function Home() {
             onOptimize={handleOptimize}
             onReset={handleReset}
             isOptimizing={stage === 'optimizing'}
+            pageBudget={pageBudget}
+            onPageBudgetChange={setPageBudget}
           />
         )}
 
@@ -112,6 +140,8 @@ export default function Home() {
             resume={optimizedResume}
             analysis={analysis}
             onReset={handleReset}
+            pageBudget={pageBudget}
+            originalScore={originalScore}
           />
         )}
       </main>

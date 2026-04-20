@@ -53,16 +53,25 @@ function TagList({ items, type }: { items: string[], type: 'missing' | 'match' |
 }
 
 export default function AnalysisResult({
-  analysis, onOptimize, onReset, isOptimizing
+  analysis, onOptimize, onReset, isOptimizing, pageBudget, onPageBudgetChange
 }: {
   analysis: AnalysisData
   onOptimize: () => void
   onReset: () => void
   isOptimizing: boolean
+  pageBudget: 1 | 2
+  onPageBudgetChange: (v: 1 | 2) => void
 }) {
-  const { matchScore, matchedSkills, missingSkills, experienceGaps, strengths, recommendations, summary } = analysis
+  const { matchScore, matchedSkills, missingSkills, experienceGaps, strengths, recommendations, summary, atsKeywords, experienceYears, seniorityLevel, suggestedPages } = analysis
 
   const scoreLabel = matchScore >= 70 ? '🟢 Strong match' : matchScore >= 50 ? '🟡 Moderate match' : '🔴 Needs work'
+
+  const seniorityLabel: Record<string, string> = {
+    junior: 'Junior (0–3 yrs)',
+    mid: 'Mid-level (3–10 yrs)',
+    senior: 'Senior (10+ yrs)',
+    executive: 'Executive',
+  }
 
   return (
     <div className="fade-up">
@@ -87,6 +96,34 @@ export default function AnalysisResult({
         </div>
       </div>
 
+      {/* Score breakdown bars */}
+      {analysis.scoreBreakdown && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 14 }}>Score Breakdown</p>
+          {([
+            { label: 'Keyword Match', key: 'keywordMatch', weight: '40%' },
+            { label: 'Skills Match', key: 'skillsMatch', weight: '25%' },
+            { label: 'Experience Relevance', key: 'experienceRelevance', weight: '15%' },
+            { label: 'Formatting', key: 'formatting', weight: '10%' },
+            { label: 'Action Verbs & Impact', key: 'actionVerbs', weight: '10%' },
+          ] as const).map(({ label, key, weight }) => {
+            const val: number = analysis.scoreBreakdown[key] ?? 0
+            const color = val >= 70 ? 'var(--accent)' : val >= 50 ? '#d97706' : '#c0392b'
+            return (
+              <div key={key} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{label} <span style={{ opacity: 0.5 }}>({weight})</span></span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color }}>{val}%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 4, background: 'var(--border)' }}>
+                  <div style={{ height: 6, borderRadius: 4, background: color, width: `${val}%`, transition: 'width 0.8s ease' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* Grid: missing + matched */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div className="card">
@@ -110,6 +147,34 @@ export default function AnalysisResult({
           <TagList items={matchedSkills} type="match" />
         </div>
       </div>
+
+      {/* ATS Keywords */}
+      {atsKeywords && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 14 }}>🔑 ATS Keywords from Job Description</p>
+          {[
+            { label: 'Hard Skills', items: atsKeywords.hardSkills, color: '#1a472a', bg: 'var(--accent-light)' },
+            { label: 'Soft Skills', items: atsKeywords.softSkills, color: '#1e40af', bg: '#dbeafe' },
+            { label: 'Certifications', items: atsKeywords.certifications, color: '#92400e', bg: '#fef3c7' },
+            { label: 'Industry Terms', items: atsKeywords.industryTerms, color: '#5b21b6', bg: '#ede9fe' },
+          ].filter(cat => cat.items?.length > 0).map(cat => (
+            <div key={cat.label} style={{ marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {cat.label}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {cat.items.map(item => (
+                  <span key={item} style={{
+                    fontSize: 12, padding: '3px 10px', borderRadius: 20,
+                    background: cat.bg, color: cat.color, fontWeight: 500,
+                    border: `1px solid ${cat.color}30`
+                  }}>{item}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Strengths */}
       {strengths.length > 0 && (
@@ -146,6 +211,37 @@ export default function AnalysisResult({
           </ol>
         </div>
       )}
+
+      {/* Page Budget */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>📄 Resume Page Length</p>
+        <p style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 12 }}>
+          Auto-detected: <strong style={{ color: 'var(--ink)' }}>{experienceYears} yrs</strong> · {seniorityLabel[seniorityLevel] ?? seniorityLevel}
+          {suggestedPages === pageBudget && (
+            <span style={{ marginLeft: 6, fontSize: 11, background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: 10, padding: '1px 7px' }}>recommended</span>
+          )}
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {([1, 2] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => onPageBudgetChange(p)}
+              style={{
+                flex: 1, padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.15s',
+                border: pageBudget === p ? '2px solid var(--accent)' : '1px solid var(--border)',
+                background: pageBudget === p ? 'var(--accent-light)' : 'var(--surface)',
+                color: pageBudget === p ? 'var(--accent)' : 'var(--ink-muted)',
+              }}
+            >
+              {p === 1 ? '1 Page' : '2 Pages'}
+              <span style={{ display: 'block', fontSize: 10, fontWeight: 400, marginTop: 2, opacity: 0.8 }}>
+                {p === 1 ? '0–10 yrs · concise' : '10+ yrs · comprehensive'}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* CTA */}
       <button

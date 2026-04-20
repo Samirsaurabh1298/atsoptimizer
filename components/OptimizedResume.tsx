@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { AnalysisData } from '@/app/page'
 
 export default function OptimizedResume({
-  resume, analysis, onReset
+  resume, analysis, onReset, pageBudget, originalScore
 }: {
   resume: string
   analysis: AnalysisData
   onReset: () => void
+  pageBudget: 1 | 2
+  originalScore: number | null
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -26,11 +28,12 @@ export default function OptimizedResume({
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
     let y = 20
     const pageHeight = 277
+    const compact = pageBudget === 1
 
     for (const rawLine of resume.split('\n')) {
       const isHeader = isSectionHeader(rawLine)
-      const fontSize = isHeader ? 12 : 11
-      const lineHeight = isHeader ? 7 : 6
+      const fontSize = isHeader ? (compact ? 11 : 12) : (compact ? 10 : 11)
+      const lineHeight = isHeader ? (compact ? 6 : 7) : (compact ? 5 : 6)
       doc.setFont('helvetica', isHeader ? 'bold' : 'normal')
       doc.setFontSize(fontSize)
       const wrapped = doc.splitTextToSize(rawLine || ' ', 180)
@@ -111,12 +114,42 @@ export default function OptimizedResume({
         </p>
       </div>
 
+      {/* Before/After score */}
+      {originalScore !== null && (
+        <div style={{
+          background: 'var(--accent-light)', border: '1px solid #b7dfc9',
+          borderRadius: 12, padding: '16px 20px', marginBottom: 16,
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'var(--ink-muted)', marginBottom: 2 }}>Before</p>
+            <p className="font-display" style={{ fontSize: 28, fontWeight: 800, color: 'var(--ink-muted)' }}>{originalScore}%</p>
+          </div>
+          <div style={{ fontSize: 22, color: 'var(--accent)', fontWeight: 700 }}>→</div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'var(--accent)', marginBottom: 2 }}>Projected after submit</p>
+            <p className="font-display" style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)' }}>
+              ~{Math.min(99, originalScore + Math.min(18, analysis.missingSkills.length * 3))}%
+            </p>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <div style={{
+              background: 'var(--accent)', color: '#fff',
+              borderRadius: 20, padding: '6px 14px', fontSize: 13, fontWeight: 700
+            }}>
+              +{Math.min(18, analysis.missingSkills.length * 3)} pts est.
+            </div>
+            <p style={{ fontSize: 10, color: 'var(--ink-muted)' }}>Re-submit to ATS for exact score</p>
+          </div>
+        </div>
+      )}
+
       {/* Quick stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'Match Score', value: `${analysis.matchScore}%` },
           { label: 'Skills Added', value: `${analysis.missingSkills.length}` },
-          { label: 'ATS Format', value: '✓ Clean' },
+          { label: 'Page Format', value: pageBudget === 1 ? '1 Page' : '2 Pages' },
         ].map(({ label, value }) => (
           <div key={label} style={{
             background: 'var(--surface)', border: '1px solid var(--border)',

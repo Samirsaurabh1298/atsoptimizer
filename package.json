@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@upstash/redis": "^1.37.0",
     "docx": "^9.6.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.383.0",

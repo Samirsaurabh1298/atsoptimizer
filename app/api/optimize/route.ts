@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { cvText, jdText, analysis } = body
+    const { cvText, jdText, analysis, pageBudget } = body
+    const pages: 1 | 2 = pageBudget === 2 ? 2 : 1
 
     if (typeof cvText !== 'string' || typeof jdText !== 'string') {
       return NextResponse.json({ error: 'Invalid input.' }, { status: 400 })
@@ -35,7 +36,13 @@ export async function POST(req: NextRequest) {
       ? analysis.recommendations.slice(0, 5).join('\n- ')
       : ''
 
+    const pageRule = pages === 1
+      ? 'PAGE LIMIT: ONE page only. Max 550 words. Keep only the last 5 years of experience in detail. Max 3 bullet points per role. Drop older or irrelevant roles entirely. Be ruthlessly concise — no filler sentences.'
+      : 'PAGE LIMIT: TWO pages max. Max 900 words. Include all relevant experience with 3–5 bullet points per role. Be comprehensive but avoid padding.'
+
     const prompt = `You are an expert ATS resume optimizer and professional resume writer. Rewrite the resume below to maximize ATS match score for the target job.
+
+${pageRule}
 
 Missing skills to incorporate: ${missingSkills}
 
