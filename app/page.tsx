@@ -12,8 +12,6 @@ export type AtsKeywords = {
   industryTerms: string[]
 }
 
-export type SeniorityLevel = 'junior' | 'mid' | 'senior' | 'executive'
-
 export type ScoreBreakdown = {
   keywordMatch: number
   skillsMatch: number
@@ -31,9 +29,6 @@ export type AnalysisData = {
   recommendations: string[]
   summary: string
   atsKeywords: AtsKeywords
-  experienceYears: number
-  seniorityLevel: SeniorityLevel
-  suggestedPages: 1 | 2
   scoreBreakdown: ScoreBreakdown
 }
 
@@ -57,7 +52,6 @@ export default function Home() {
   const [cvMeta, setCvMeta] = useState<{ fileType: string; base64?: string } | null>(null)
   const [docxResultBase64, setDocxResultBase64] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [pageBudget, setPageBudget] = useState<1 | 2>(1)
   const [originalScore, setOriginalScore] = useState<number | null>(null)
 
   const handleAnalyze = async (cv: string, jd: string, meta?: { fileType: string; base64?: string }) => {
@@ -78,7 +72,6 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || 'Analysis failed')
       setAnalysis(data)
       setOriginalScore(data.matchScore)
-      setPageBudget(data.suggestedPages ?? 1)
       setStage('results')
     } catch (e: any) {
       setError(e.message)
@@ -110,7 +103,7 @@ export default function Home() {
       const res = await fetch('/api/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvText, jdText, analysis, pageBudget }),
+        body: JSON.stringify({ cvText, jdText, analysis }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Optimization failed')
@@ -165,8 +158,6 @@ export default function Home() {
             onOptimize={handleOptimize}
             onReset={handleReset}
             isOptimizing={stage === 'optimizing'}
-            pageBudget={pageBudget}
-            onPageBudgetChange={setPageBudget}
           />
         )}
 
@@ -175,7 +166,6 @@ export default function Home() {
             resume={optimizedResume}
             analysis={analysis}
             onReset={handleReset}
-            pageBudget={pageBudget}
             originalScore={originalScore}
             optimizeResult={optimizeResult}
             docxResultBase64={docxResultBase64}

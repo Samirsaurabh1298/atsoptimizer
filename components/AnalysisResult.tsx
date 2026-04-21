@@ -53,25 +53,16 @@ function TagList({ items, type }: { items: string[], type: 'missing' | 'match' |
 }
 
 export default function AnalysisResult({
-  analysis, onOptimize, onReset, isOptimizing, pageBudget, onPageBudgetChange
+  analysis, onOptimize, onReset, isOptimizing
 }: {
   analysis: AnalysisData
   onOptimize: () => void
   onReset: () => void
   isOptimizing: boolean
-  pageBudget: 1 | 2
-  onPageBudgetChange: (v: 1 | 2) => void
 }) {
-  const { matchScore, matchedSkills, missingSkills, experienceGaps, strengths, recommendations, summary, atsKeywords, experienceYears, seniorityLevel, suggestedPages } = analysis
+  const { matchScore, matchedSkills, missingSkills, experienceGaps, strengths, recommendations, summary, atsKeywords } = analysis
 
   const scoreLabel = matchScore >= 70 ? '🟢 Strong match' : matchScore >= 50 ? '🟡 Moderate match' : '🔴 Needs work'
-
-  const seniorityLabel: Record<string, string> = {
-    junior: 'Junior (0–3 yrs)',
-    mid: 'Mid-level (3–10 yrs)',
-    senior: 'Senior (10+ yrs)',
-    executive: 'Executive',
-  }
 
   return (
     <div className="fade-up">
@@ -223,37 +214,6 @@ export default function AnalysisResult({
           </ol>
         </div>
       )}
-
-      {/* Page Budget */}
-      <div className="card" style={{ marginBottom: 16 }}>
-        <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>📄 Resume Page Length</p>
-        <p style={{ fontSize: 12, color: 'var(--ink-muted)', marginBottom: 12 }}>
-          Auto-detected: <strong style={{ color: 'var(--ink)' }}>{experienceYears} yrs</strong> · {seniorityLabel[seniorityLevel] ?? seniorityLevel}
-          {suggestedPages === pageBudget && (
-            <span style={{ marginLeft: 6, fontSize: 11, background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: 10, padding: '1px 7px' }}>recommended</span>
-          )}
-        </p>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {([1, 2] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => onPageBudgetChange(p)}
-              style={{
-                flex: 1, padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', transition: 'all 0.15s',
-                border: pageBudget === p ? '2px solid var(--accent)' : '1px solid var(--border)',
-                background: pageBudget === p ? 'var(--accent-light)' : 'var(--surface)',
-                color: pageBudget === p ? 'var(--accent)' : 'var(--ink-muted)',
-              }}
-            >
-              {p === 1 ? '1 Page' : '2 Pages'}
-              <span style={{ display: 'block', fontSize: 10, fontWeight: 400, marginTop: 2, opacity: 0.8 }}>
-                {p === 1 ? '0–10 yrs · concise' : '10+ yrs · comprehensive'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* CTA */}
       <button

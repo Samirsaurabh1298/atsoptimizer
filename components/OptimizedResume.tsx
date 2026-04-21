@@ -3,12 +3,11 @@ import { useState } from 'react'
 import { AnalysisData, OptimizeResult } from '@/app/page'
 
 export default function OptimizedResume({
-  resume, analysis, onReset, pageBudget, originalScore, optimizeResult, docxResultBase64
+  resume, analysis, onReset, originalScore, optimizeResult, docxResultBase64
 }: {
   resume: string
   analysis: AnalysisData
   onReset: () => void
-  pageBudget: 1 | 2
   originalScore: number | null
   optimizeResult: OptimizeResult | null
   docxResultBase64: string | null
@@ -30,12 +29,10 @@ export default function OptimizedResume({
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
     let y = 20
     const pageHeight = 277
-    const compact = pageBudget === 1
-
     for (const rawLine of resume.split('\n')) {
       const isHeader = isSectionHeader(rawLine)
-      const fontSize = isHeader ? (compact ? 11 : 12) : (compact ? 10 : 11)
-      const lineHeight = isHeader ? (compact ? 6 : 7) : (compact ? 5 : 6)
+      const fontSize = isHeader ? 12 : 11
+      const lineHeight = isHeader ? 7 : 6
       doc.setFont('helvetica', isHeader ? 'bold' : 'normal')
       doc.setFontSize(fontSize)
       const wrapped = doc.splitTextToSize(rawLine || ' ', 180)
@@ -152,7 +149,6 @@ export default function OptimizedResume({
           { label: 'ATS Score', value: `${optimizeResult?.atsMatchScore ?? analysis.matchScore}%` },
           { label: 'Keywords Added', value: `${optimizeResult?.keywordsAdded.length ?? 0}` },
           { label: 'Bullets Fixed', value: `${optimizeResult?.weakBulletsFixed ?? 0}` },
-          { label: 'Page Format', value: pageBudget === 1 ? '1 Page' : '2 Pages' },
         ].map(({ label, value }) => (
           <div key={label} style={{
             background: 'var(--surface)', border: '1px solid var(--border)',

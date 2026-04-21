@@ -70,8 +70,6 @@ Return ONLY a valid JSON object (no markdown, no explanation):
     "certifications": [<certifications, licenses, degrees explicitly mentioned in JD, up to 5>],
     "industryTerms": [<domain-specific jargon, methodologies, frameworks from JD, up to 8>]
   },
-  "experienceYears": <total years of professional experience parsed from the resume, integer>,
-  "seniorityLevel": <"junior" if 0-3 yrs, "mid" if 3-10 yrs, "senior" if 10-20 yrs, "executive" if 20+ yrs or C-suite/VP title>,
   "scoreBreakdown": {
     "keywordMatch": <0-100, % of JD keywords found in resume>,
     "skillsMatch": <0-100, % of required JD skills the candidate has>,
@@ -93,12 +91,6 @@ Return ONLY a valid JSON object (no markdown, no explanation):
     if (!parsed.atsKeywords || typeof parsed.atsKeywords !== 'object') {
       parsed.atsKeywords = { hardSkills: [], softSkills: [], certifications: [], industryTerms: [] }
     }
-    if (typeof parsed.experienceYears !== 'number') parsed.experienceYears = 0
-    if (!parsed.seniorityLevel) parsed.seniorityLevel = 'mid'
-    const yrs: number = parsed.experienceYears
-    const level: string = parsed.seniorityLevel
-    parsed.suggestedPages = (yrs >= 10 || level === 'executive') ? 2 : 1
-
     // Recompute score from components — never trust AI's own matchScore
     const bd = parsed.scoreBreakdown
     if (bd && typeof bd.keywordMatch === 'number') {

@@ -16,8 +16,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { cvText, jdText, analysis, pageBudget } = body
-    const pages: 1 | 2 = pageBudget === 2 ? 2 : 1
+    const { cvText, jdText, analysis } = body
 
     if (typeof cvText !== 'string' || typeof jdText !== 'string') {
       return NextResponse.json({ error: 'Invalid input.' }, { status: 400 })
@@ -33,16 +32,10 @@ export async function POST(req: NextRequest) {
       ? analysis.missingSkills.slice(0, 10).join(', ')
       : ''
 
-    const pageRule = pages === 1
-      ? 'PAGE LIMIT: ONE page. Max 550 words. Show only last 5 years of experience. Max 3 bullet points per role.'
-      : 'PAGE LIMIT: TWO pages max. Max 900 words. Include all relevant experience with 3–5 bullet points per role.'
-
     const prompt = `You are a resume optimization engine — a "diff editor", NOT a writer.
 
 Your task is to MODIFY the existing resume to better match the job description.
 DO NOT rewrite from scratch. Minimize changes. Maximize ATS relevance.
-
-${pageRule}
 
 STRICT RULES:
 - Preserve EXACT section order, headings, bullet style, and formatting
