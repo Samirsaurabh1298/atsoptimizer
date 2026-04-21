@@ -14,8 +14,12 @@ function memGet(key: string): unknown | null {
 
 function memSet(key: string, value: unknown): void {
   if (memStore.size >= MAX_ENTRIES) {
-    const oldest = [...memStore.entries()].sort((a, b) => a[1].expiresAt - b[1].expiresAt)[0]
-    if (oldest) memStore.delete(oldest[0])
+    let oldestKey: string | null = null
+    let oldestTime = Infinity
+    memStore.forEach((entry, k) => {
+      if (entry.expiresAt < oldestTime) { oldestTime = entry.expiresAt; oldestKey = k }
+    })
+    if (oldestKey) memStore.delete(oldestKey)
   }
   memStore.set(key, { value, expiresAt: Date.now() + TTL_SECONDS * 1000 })
 }
