@@ -69,8 +69,9 @@ Return ONLY a valid JSON object (no markdown, no explanation):
 }`
 
     const content = await groqChat([{ role: 'user', content: prompt }], {
-      max_tokens: 3500,
+      max_tokens: 2500,
       temperature: 0.2,
+      model: 'llama-3.1-8b-instant',
     })
 
     const parsed = parseGroqJson(content)

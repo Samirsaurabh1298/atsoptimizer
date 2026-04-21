@@ -3,6 +3,8 @@ import { groqChat, safeErrorMessage, parseGroqJson } from '@/lib/groq'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { parseDocxParagraphs, applyDocxModifications } from '@/lib/docxPreserver'
 
+export const maxDuration = 60
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
   const { allowed, retryAfter } = checkRateLimit(ip)
