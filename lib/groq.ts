@@ -1,5 +1,5 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const TIMEOUT_MS = 15_000
+const TIMEOUT_MS = 55_000
 const MAX_RETRIES = 2
 
 // Safe error messages that can be shown to users

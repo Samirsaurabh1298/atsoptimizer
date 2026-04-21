@@ -3,6 +3,8 @@ import { groqChat, safeErrorMessage, parseGroqJson } from '@/lib/groq'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { cacheGet, cacheSet, hashKey } from '@/lib/cache'
 
+export const maxDuration = 60
+
 const MAX_TEXT_LEN = 20_000
 
 export async function POST(req: NextRequest) {
@@ -79,7 +81,10 @@ Return ONLY a valid JSON object (no markdown, no explanation):
   }
 }`
 
-    const content = await groqChat([{ role: 'user', content: prompt }], { max_tokens: 1500 })
+    const content = await groqChat([{ role: 'user', content: prompt }], {
+      max_tokens: 1200,
+      model: 'llama-3.1-8b-instant',
+    })
     const parsed = parseGroqJson(content)
 
     // Schema validation

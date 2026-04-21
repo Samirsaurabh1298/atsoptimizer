@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { groqChat, safeErrorMessage, parseGroqJson } from '@/lib/groq'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
+export const maxDuration = 60
+
 const MAX_TEXT_LEN = 20_000
 
 export async function POST(req: NextRequest) {
