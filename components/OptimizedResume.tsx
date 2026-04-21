@@ -1,15 +1,16 @@
 'use client'
 import { useState } from 'react'
-import { AnalysisData } from '@/app/page'
+import { AnalysisData, OptimizeResult } from '@/app/page'
 
 export default function OptimizedResume({
-  resume, analysis, onReset, pageBudget, originalScore
+  resume, analysis, onReset, pageBudget, originalScore, optimizeResult
 }: {
   resume: string
   analysis: AnalysisData
   onReset: () => void
   pageBudget: 1 | 2
   originalScore: number | null
+  optimizeResult: OptimizeResult | null
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -145,10 +146,11 @@ export default function OptimizedResume({
       )}
 
       {/* Quick stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
         {[
-          { label: 'Match Score', value: `${analysis.matchScore}%` },
-          { label: 'Skills Added', value: `${analysis.missingSkills.length}` },
+          { label: 'ATS Score', value: `${optimizeResult?.atsMatchScore ?? analysis.matchScore}%` },
+          { label: 'Keywords Added', value: `${optimizeResult?.keywordsAdded.length ?? 0}` },
+          { label: 'Bullets Fixed', value: `${optimizeResult?.weakBulletsFixed ?? 0}` },
           { label: 'Page Format', value: pageBudget === 1 ? '1 Page' : '2 Pages' },
         ].map(({ label, value }) => (
           <div key={label} style={{
@@ -160,6 +162,40 @@ export default function OptimizedResume({
           </div>
         ))}
       </div>
+
+      {/* Keywords added + sections modified */}
+      {optimizeResult && (optimizeResult.keywordsAdded.length > 0 || optimizeResult.sectionsModified.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          {optimizeResult.keywordsAdded.length > 0 && (
+            <div className="card">
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Keywords Injected
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {optimizeResult.keywordsAdded.map(k => (
+                  <span key={k} className="tag-match" style={{ fontSize: 11 }}>{k}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {optimizeResult.sectionsModified.length > 0 && (
+            <div className="card">
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Sections Modified
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {optimizeResult.sectionsModified.map(s => (
+                  <span key={s} style={{
+                    fontSize: 11, padding: '3px 10px', borderRadius: 20,
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    color: 'var(--ink)', fontWeight: 500
+                  }}>{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>

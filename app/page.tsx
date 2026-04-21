@@ -37,6 +37,14 @@ export type AnalysisData = {
   scoreBreakdown: ScoreBreakdown
 }
 
+export type OptimizeResult = {
+  optimizedResume: string
+  atsMatchScore: number
+  keywordsAdded: string[]
+  sectionsModified: string[]
+  weakBulletsFixed: number
+}
+
 export type Stage = 'upload' | 'analyzing' | 'results' | 'optimizing' | 'optimized'
 
 export default function Home() {
@@ -45,6 +53,7 @@ export default function Home() {
   const [jdText, setJdText] = useState('')
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null)
   const [optimizedResume, setOptimizedResume] = useState('')
+  const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null)
   const [error, setError] = useState('')
   const [pageBudget, setPageBudget] = useState<1 | 2>(1)
   const [originalScore, setOriginalScore] = useState<number | null>(null)
@@ -85,6 +94,7 @@ export default function Home() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Optimization failed')
       setOptimizedResume(data.optimizedResume)
+      setOptimizeResult(data)
       setStage('optimized')
     } catch (e: any) {
       setError(e.message)
@@ -142,6 +152,7 @@ export default function Home() {
             onReset={handleReset}
             pageBudget={pageBudget}
             originalScore={originalScore}
+            optimizeResult={optimizeResult}
           />
         )}
       </main>
