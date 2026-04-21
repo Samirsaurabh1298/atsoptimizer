@@ -31,6 +31,11 @@ async function extractPdfClientSide(file: File): Promise<string> {
   return pageTexts.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer()
+  return Buffer.from(buf).toString('base64')
+}
+
 async function extractText(file: File): Promise<string> {
   if (file.type === 'text/plain') {
     return await file.text()
@@ -50,12 +55,13 @@ async function extractText(file: File): Promise<string> {
 }
 
 function FileDropZone({
-  label, icon, accept, value, onChange, hint
+  label, icon, accept, value, onChange, hint, storeBuffer
 }: {
   label: string, icon: React.ReactNode, accept: Record<string, string[]>,
-  value: { name: string; text: string } | null,
-  onChange: (val: { name: string; text: string } | null) => void,
-  hint: string
+  value: { name: string; text: string; fileType?: string; base64?: string } | null,
+  onChange: (val: { name: string; text: string; fileType?: string; base64?: string } | null) => void,
+  hint: string,
+  storeBuffer?: boolean
 }) {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
@@ -65,14 +71,21 @@ function FileDropZone({
     setLoading(true)
     setErr('')
     try {
-      const text = await extractText(accepted[0])
-      onChange({ name: accepted[0].name, text })
+      const file = accepted[0]
+      const text = await extractText(file)
+      const isDocx = file.name.endsWith('.docx') ||
+        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      let base64: string | undefined
+      if (storeBuffer && isDocx) {
+        base64 = await fileToBase64(file)
+      }
+      onChange({ name: file.name, text, fileType: isDocx ? 'docx' : 'other', base64 })
     } catch (e: any) {
       setErr(e.message)
     } finally {
       setLoading(false)
     }
-  }, [onChange])
+  }, [onChange, storeBuffer])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop, accept, maxFiles: 1, maxSize: 10 * 1024 * 1024
@@ -126,8 +139,10 @@ function FileDropZone({
   )
 }
 
-export default function UploadSection({ onAnalyze }: { onAnalyze: (cv: string, jd: string) => void }) {
-  const [cv, setCv] = useState<{ name: string; text: string } | null>(null)
+export default function UploadSection({ onAnalyze }: {
+  onAnalyze: (cv: string, jd: string, cvMeta?: { fileType: string; base64?: string }) => void
+}) {
+  const [cv, setCv] = useState<{ name: string; text: string; fileType?: string; base64?: string } | null>(null)
   const [jd, setJd] = useState<{ name: string; text: string } | null>(null)
   const [jdText, setJdText] = useState('')
   const [useText, setUseText] = useState(false)
@@ -140,7 +155,7 @@ export default function UploadSection({ onAnalyze }: { onAnalyze: (cv: string, j
   const handleAnalyze = () => {
     if (!cv) return
     const jobDesc = useText ? jdText : jd?.text || ''
-    onAnalyze(cv.text, jobDesc)
+    onAnalyze(cv.text, jobDesc, cv.fileType ? { fileType: cv.fileType, base64: cv.base64 } : undefined)
   }
 
   return (
@@ -200,7 +215,8 @@ export default function UploadSection({ onAnalyze }: { onAnalyze: (cv: string, j
             accept={{ 'application/pdf': ['.pdf'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'], 'text/plain': ['.txt'] }}
             value={cv}
             onChange={setCv}
-            hint="PDF, DOCX, or TXT · Max 10MB"
+            hint="DOCX recommended · PDF, TXT also supported · Max 10MB"
+            storeBuffer={true}
           />
 
           <div>

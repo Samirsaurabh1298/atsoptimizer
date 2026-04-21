@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { AnalysisData, OptimizeResult } from '@/app/page'
 
 export default function OptimizedResume({
-  resume, analysis, onReset, pageBudget, originalScore, optimizeResult
+  resume, analysis, onReset, pageBudget, originalScore, optimizeResult, docxResultBase64
 }: {
   resume: string
   analysis: AnalysisData
@@ -11,6 +11,7 @@ export default function OptimizedResume({
   pageBudget: 1 | 2
   originalScore: number | null
   optimizeResult: OptimizeResult | null
+  docxResultBase64: string | null
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -197,6 +198,38 @@ export default function OptimizedResume({
         </div>
       )}
 
+      {/* DOCX preserved download — shown prominently when DOCX was uploaded */}
+      {docxResultBase64 && (
+        <div style={{
+          background: 'var(--accent-light)', border: '2px solid var(--accent)',
+          borderRadius: 12, padding: '16px 20px', marginBottom: 16,
+          display: 'flex', alignItems: 'center', gap: 14
+        }}>
+          <span style={{ fontSize: 28 }}>📄</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--accent)' }}>Your original format is preserved</p>
+            <p style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2 }}>Same layout, fonts, and structure — only content was improved</p>
+          </div>
+          <button
+            onClick={() => {
+              const bytes = Uint8Array.from(atob(docxResultBase64), c => c.charCodeAt(0))
+              const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url; a.download = 'optimized-resume.docx'; a.click()
+              URL.revokeObjectURL(url)
+            }}
+            style={{
+              padding: '10px 20px', background: 'var(--accent)', color: '#fff',
+              border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            ⬇ Download .docx
+          </button>
+        </div>
+      )}
+
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <button
@@ -269,8 +302,8 @@ export default function OptimizedResume({
         <strong>ATS tip:</strong> Download as Word (.docx) to edit further, or PDF to submit directly. Both use Arial 11pt for maximum ATS compatibility.
       </div>
 
-      {/* Resume output */}
-      <div className="card">
+      {/* Resume output — only shown for non-DOCX (plain text) results */}
+      {!docxResultBase64 && <div className="card">
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--border)'
@@ -291,7 +324,7 @@ export default function OptimizedResume({
         }}>
           {resume}
         </pre>
-      </div>
+      </div>}
 
       <div style={{ textAlign: 'center', marginTop: 24 }}>
         <button

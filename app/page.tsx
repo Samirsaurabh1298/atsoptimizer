@@ -54,13 +54,17 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null)
   const [optimizedResume, setOptimizedResume] = useState('')
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null)
+  const [cvMeta, setCvMeta] = useState<{ fileType: string; base64?: string } | null>(null)
+  const [docxResultBase64, setDocxResultBase64] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [pageBudget, setPageBudget] = useState<1 | 2>(1)
   const [originalScore, setOriginalScore] = useState<number | null>(null)
 
-  const handleAnalyze = async (cv: string, jd: string) => {
+  const handleAnalyze = async (cv: string, jd: string, meta?: { fileType: string; base64?: string }) => {
     setCvText(cv)
     setJdText(jd)
+    setCvMeta(meta ?? null)
+    setDocxResultBase64(null)
     setStage('analyzing')
     setError('')
 
@@ -86,6 +90,23 @@ export default function Home() {
     setStage('optimizing')
     setError('')
     try {
+      const isDocx = cvMeta?.fileType === 'docx' && cvMeta.base64
+
+      if (isDocx) {
+        const res = await fetch('/api/optimize-docx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ docxBase64: cvMeta!.base64, jdText, analysis }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Optimization failed')
+        setDocxResultBase64(data.docxBase64)
+        setOptimizeResult(data)
+        setOptimizedResume('')
+        setStage('optimized')
+        return
+      }
+
       const res = await fetch('/api/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,6 +129,10 @@ export default function Home() {
     setJdText('')
     setAnalysis(null)
     setOptimizedResume('')
+    setOptimizeResult(null)
+    setCvMeta(null)
+    setDocxResultBase64(null)
+    setOriginalScore(null)
     setError('')
   }
 
@@ -153,6 +178,7 @@ export default function Home() {
             pageBudget={pageBudget}
             originalScore={originalScore}
             optimizeResult={optimizeResult}
+            docxResultBase64={docxResultBase64}
           />
         )}
       </main>
