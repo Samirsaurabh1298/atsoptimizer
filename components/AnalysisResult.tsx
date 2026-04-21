@@ -109,14 +109,26 @@ export default function AnalysisResult({
           ] as const).map(({ label, key, weight }) => {
             const val: number = analysis.scoreBreakdown[key] ?? 0
             const color = val >= 70 ? 'var(--accent)' : val >= 50 ? '#d97706' : '#c0392b'
+            const bgTrack = val >= 70 ? '#dcfce7' : val >= 50 ? '#fef3c7' : '#fee2e2'
             return (
-              <div key={key} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{label} <span style={{ opacity: 0.5 }}>({weight})</span></span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color }}>{val}%</span>
+              <div key={key} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>
+                    {label}
+                    <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--ink-muted)', fontWeight: 400 }}>({weight})</span>
+                  </span>
+                  <span style={{
+                    fontSize: 13, fontWeight: 700, color,
+                    background: bgTrack, borderRadius: 20,
+                    padding: '2px 10px', minWidth: 44, textAlign: 'center'
+                  }}>{val}%</span>
                 </div>
-                <div style={{ height: 6, borderRadius: 4, background: 'var(--border)' }}>
-                  <div style={{ height: 6, borderRadius: 4, background: color, width: `${val}%`, transition: 'width 0.8s ease' }} />
+                <div style={{ height: 10, borderRadius: 99, background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: 10, borderRadius: 99, background: color,
+                    width: `${val}%`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
+                    boxShadow: `0 2px 8px ${color}55`
+                  }} />
                 </div>
               </div>
             )
